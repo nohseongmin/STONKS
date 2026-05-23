@@ -41,6 +41,30 @@ STONKS/
 - Transformer (Temporal Fusion Transformer)
 - 앙상블
 
+## GitHub API 인코딩 규칙 (필수)
+> GitHub API로 한글 텍스트 전송 시 반드시 아래 방식을 사용한다.
+
+PowerShell에서 한글이 깨지는 원인: `ConvertTo-Json`이 한글을 `\uXXXX`로 이스케이프 처리함.
+
+**올바른 방법 — UTF-8 바이트 직접 전송:**
+```powershell
+# JSON 생성 후 UTF-8 바이트로 변환해서 전송
+$bodyJson = @{ title = "한글제목"; body = "한글내용" } | ConvertTo-Json -Depth 10 -Compress
+$bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($bodyJson)
+
+Invoke-RestMethod -Uri $url -Method Post `
+    -Body $bodyBytes `
+    -Headers @{ Authorization = "token $TOKEN" } `
+    -ContentType "application/json; charset=utf-8"
+```
+
+**절대 사용 금지:**
+```powershell
+# 이 방식은 한글 깨짐 발생
+Invoke-RestMethod -Uri $url -Body ($obj | ConvertTo-Json) ...
+```
+
 ## 업데이트 이력
 - 2026-05-23: 프로젝트 초기 설정
 - 2026-05-23: GitHub PR 업로드 규칙 추가
+- 2026-05-23: GitHub API 한글 인코딩 규칙 추가 (UTF-8 바이트 직접 전송)
